@@ -59,3 +59,6 @@ dfs + 技巧
 
 暴力枚举
 [2026_5_2](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_2)：[力扣：788：旋转数字](https://leetcode.cn/problems/rotated-digits/description/?envType=daily-question&envId=2026-05-02)
+
+状态机 + 数位dp
+[2026_5_2](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_3)：[力扣：3869：统计区间内奇妙数的数目](https://leetcode.cn/problems/count-fancy-numbers-in-a-range/description/)
