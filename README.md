@@ -61,4 +61,6 @@ dfs + 技巧
 [2026_5_2](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_2)：[力扣：788：旋转数字](https://leetcode.cn/problems/rotated-digits/description/?envType=daily-question&envId=2026-05-02)
 
 状态机 + 数位dp
-[2026_5_2](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_3)：[力扣：3869：统计区间内奇妙数的数目](https://leetcode.cn/problems/count-fancy-numbers-in-a-range/description/)
+[2026_5_3](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_3)：[力扣：3869：统计区间内奇妙数的数目](https://leetcode.cn/problems/count-fancy-numbers-in-a-range/description/)
+二维LTS（最长严格递增子序列）
+[2026_5_2](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_3)：[力扣：354：俄罗斯套娃信封问题](https://leetcode.cn/problems/russian-doll-envelopes/description/)
