@@ -66,5 +66,8 @@ dfs + 技巧
 [2026_5_3](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_3)：[力扣：354：俄罗斯套娃信封问题](https://leetcode.cn/problems/russian-doll-envelopes/description/)
 
 
-二维LTS（最长严格递增子序列）
+异或性质
 [2026_5_4](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_4)：[codeforces：2175B](https://codeforces.com/problemset/problem/2175/B)
+
+贪心
+[2026_5_5](https://github.com/shinilv/_algorithm_/tree/master/2026_4/2026_5_5)：[codeforces：2175B](https://codeforces.com/problemset/problem/1466/C)
