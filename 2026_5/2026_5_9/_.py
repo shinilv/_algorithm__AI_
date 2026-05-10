@@ -15,6 +15,6 @@ class Solution:
         ans = min(s.count('1'), s.count('0'))
         if s.count('1') >= 1:
             ans = min(ans, s.count('1') - 1)
-        if s[0] == '1' and s[-1] == '1':
+        if s[0] == '1' and s[-1] == '1' and n >= 2:
             ans = min(ans, s.count('1') - 2)
         return ans
