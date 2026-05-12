@@ -75,3 +75,7 @@ dfs + 技巧
 
 二维前缀和
 [2026_5_7](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_7)：[codeforces：611C](https://codeforces.com/problemset/problem/611/C)
+
+
+贪心
+[2026_5_12](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_12)：[力扣：1665：完成所有任务的最小初始能量](https://leetcode.cn/problems/minimum-initial-energy-to-finish-tasks/description/?envType=daily-question&envId=2026-05-12)
