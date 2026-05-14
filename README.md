@@ -82,3 +82,7 @@ dfs + 技巧
 
 数论 + 贪心
 [2026_5_13](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_13)：[codeforces：2200E](https://codeforces.com/problemset/problem/2200/E)
+
+
+博弈论 + 贪心
+[2026_5_14](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_14)：[codeforces：2200E](https://codeforces.com/problemset/problem/1965/A)
