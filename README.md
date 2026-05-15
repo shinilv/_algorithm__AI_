@@ -76,6 +76,11 @@ dfs + 技巧
 二维前缀和
 [2026_5_7](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_7)：[codeforces：611C](https://codeforces.com/problemset/problem/611/C)
 
+贪心
+[2026_5_9](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_9)：[力扣：3922：使二进制字符串连贯的最小反转次数](https://leetcode.cn/problems/minimum-flips-to-make-binary-string-coherent/description/)
+
+DP
+[2026_5_10](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_10)：[力扣：2770：达到末尾下标所需的最大跳跃次数](https://leetcode.cn/problems/maximum-number-of-jumps-to-reach-the-last-index/)
 
 贪心
 [2026_5_12](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_12)：[力扣：1665：完成所有任务的最小初始能量](https://leetcode.cn/problems/minimum-initial-energy-to-finish-tasks/description/?envType=daily-question&envId=2026-05-12)
@@ -86,3 +91,9 @@ dfs + 技巧
 
 博弈论 + 贪心
 [2026_5_14](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_14)：[codeforces：2200E](https://codeforces.com/problemset/problem/1965/A)
+
+
+经典二分
+[2026_5_15](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_15)：[力扣：寻找旋转排序数组中的最小值](https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/description/?envType=daily-question&envId=2026-05-15)
+
+
