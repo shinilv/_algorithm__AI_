@@ -96,4 +96,6 @@ DP
 经典二分
 [2026_5_15](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_15)：[力扣：寻找旋转排序数组中的最小值](https://leetcode.cn/problems/find-minimum-in-rotated-sorted-array/description/?envType=daily-question&envId=2026-05-15)
 
+bfs
+[2026_5_17](https://github.com/shinilv/_algorithm_/tree/master/2026_5/2026_5_17)：[力扣1306：跳跃游戏III](https://leetcode.cn/problems/jump-game-iii/description/?envType=daily-question&envId=2026-05-17)
 
