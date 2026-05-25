@@ -2,8 +2,8 @@
 题意：
 给定一个单链表的头节点，判断该链表是不是回文链表
 题解：
+快慢指针 + 反转链表，然后遍历比较
 */
-
 
 /**
  * Definition for singly-linked list.
@@ -16,7 +16,7 @@
  * };
  */
 class Solution {
-public:
+   public:
     bool isPalindrome(ListNode* head) {
         ListNode *p1 = head, *p2 = head;
         while (p2 && p2->next) {
