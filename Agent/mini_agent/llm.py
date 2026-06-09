@@ -1,0 +1,145 @@
+from __future__ import annotations
+
+import json
+import os
+import re
+import urllib.error
+import urllib.request
+from pathlib import Path
+from typing import Any
+
+from .tools import ToolRegistry
+
+
+class MockLLM:
+    """A deterministic fake LLM for learning the agent loop without an API key."""
+
+    def complete(self, messages: list[dict[str, str]], tools: ToolRegistry) -> str:
+        last = messages[-1]
+        original_task = next(message["content"] for message in messages if message["role"] == "user")
+
+        if last["role"] == "user":
+            if "查找" in original_task or "搜索" in original_task or "search" in original_task.lower():
+                query = _extract_query(original_task)
+                return _json(
+                    thought="I should search the saved notes.",
+                    action="search_notes",
+                    action_input={"query": query},
+                )
+            expression = _extract_expression(original_task)
+            if expression:
+                return _json(
+                    thought="I should calculate the arithmetic expression first.",
+                    action="calculator",
+                    action_input={"expression": expression},
+                )
+            if "时间" in original_task or "time" in original_task.lower():
+                return _json(thought="I should check the current time.", action="now", action_input={})
+            return _json(
+                thought="This simple task can be answered directly.",
+                final="这是 mock 模型的直接回答。你可以切换到 --backend openai 使用真实模型。",
+            )
+
+        observation = last["content"]
+        if _should_save(original_task) and not _already_used(messages, "save_note"):
+            return _json(
+                thought="The user asked to save the result, so I should write a note.",
+                action="save_note",
+                action_input={"title": "Agent learning note", "content": f"Result: {observation}"},
+            )
+
+        return _json(thought="The required tool work is complete.", final=f"完成：{observation}")
+
+
+class OpenAICompatibleLLM:
+    def __init__(self, api_key: str, model: str, base_url: str) -> None:
+        self.api_key = api_key
+        self.model = model
+        self.base_url = base_url
+
+    @classmethod
+    def from_env(cls) -> "OpenAICompatibleLLM":
+        load_dotenv()
+        api_key = os.getenv("OPENAI_API_KEY", "").strip()
+        model = os.getenv("OPENAI_MODEL", "").strip()
+        base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1/chat/completions").strip()
+
+        missing = [name for name, value in {"OPENAI_API_KEY": api_key, "OPENAI_MODEL": model}.items() if not value]
+        if missing:
+            joined = ", ".join(missing)
+            raise RuntimeError(f"Missing environment variable(s): {joined}. See .env.example.")
+
+        return cls(api_key=api_key, model=model, base_url=base_url)
+
+    def complete(self, messages: list[dict[str, str]], tools: ToolRegistry) -> str:
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": 0.2,
+        }
+        data = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            self.base_url,
+            data=data,
+            headers={
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        try:
+            with urllib.request.urlopen(request, timeout=60) as response:
+                body = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as exc:
+            detail = exc.read().decode("utf-8", errors="replace")
+            raise RuntimeError(f"API request failed: HTTP {exc.code}: {detail}") from exc
+
+        return body["choices"][0]["message"]["content"]
+
+
+def load_dotenv(path: str | Path = ".env") -> None:
+    env_path = Path(path)
+    if not env_path.exists():
+        return
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+
+
+def _json(**payload: Any) -> str:
+    return json.dumps(payload, ensure_ascii=False)
+
+
+def _extract_expression(text: str) -> str | None:
+    matches = re.findall(r"[0-9][0-9\s+\-*/().%]*[0-9)]", text)
+    if not matches:
+        return None
+    return max(matches, key=len).strip()
+
+
+def _extract_query(text: str) -> str:
+    quoted = re.findall(r"[\"'“”‘’](.+?)[\"'“”‘’]", text)
+    if quoted:
+        return quoted[0].strip()
+    contains_match = re.search(r"包含\s*([\w.+\-*/()]+)", text)
+    if contains_match:
+        return contains_match.group(1).strip()
+    match = re.search(r"(?:包含|查找|搜索)\s*([\w\u4e00-\u9fff.+\-*/() ]+)", text)
+    if match:
+        return match.group(1).strip()
+    return text.strip()
+
+
+def _should_save(text: str) -> bool:
+    lowered = text.lower()
+    return any(keyword in lowered for keyword in ["保存", "记录", "save", "note"])
+
+
+def _already_used(messages: list[dict[str, str]], action: str) -> bool:
+    needle = f'"action": "{action}"'
+    compact_needle = f'"action":"{action}"'
+    return any(needle in message["content"] or compact_needle in message["content"] for message in messages)
