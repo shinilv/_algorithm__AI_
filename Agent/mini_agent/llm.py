@@ -26,6 +26,13 @@ class MockLLM:
                     action="search_notes",
                     action_input={"query": query},
                 )
+            if _is_weather_task(original_task):
+                city = _extract_city(original_task)
+                return _json(
+                    thought="I should check the weather tool.",
+                    action="weather",
+                    action_input={"city": city},
+                )
             expression = _extract_expression(original_task)
             if expression:
                 return _json(
@@ -132,6 +139,40 @@ def _extract_query(text: str) -> str:
     if match:
         return match.group(1).strip()
     return text.strip()
+
+
+def _is_weather_task(text: str) -> bool:
+    return "weather" in text.lower() or "\u5929\u6c14" in text
+
+
+def _extract_city(text: str) -> str:
+    quoted = re.findall(r"[\"'](.+?)[\"']", text)
+    if quoted:
+        return quoted[0].strip()
+
+    english = re.search(r"weather\s+(?:in|for)\s+([\w .-]+)", text, flags=re.IGNORECASE)
+    if english:
+        return english.group(1).strip(" ?,.")
+
+    before_weather = re.search(r"([\w\u4e00-\u9fff]+)\s*\u7684?\s*\u5929\u6c14", text)
+    if before_weather:
+        city = before_weather.group(1).strip()
+        prefixes = [
+            "\u5e2e\u6211\u770b\u770b",
+            "\u5e2e\u6211\u67e5\u67e5",
+            "\u5e2e\u6211\u67e5",
+            "\u67e5\u8be2",
+            "\u770b\u770b",
+            "\u67e5\u67e5",
+            "\u67e5",
+        ]
+        for prefix in prefixes:
+            if city.startswith(prefix):
+                city = city[len(prefix) :]
+                break
+        return city.strip() or "local"
+
+    return "local"
 
 
 def _should_save(text: str) -> bool:

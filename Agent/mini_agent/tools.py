@@ -70,6 +70,14 @@ def build_default_registry() -> ToolRegistry:
     )
     registry.register(
         Tool(
+            name="weather",
+            description="Return mock weather for a city. This demo does not call a real weather API.",
+            parameters={"city": "City name, for example: Beijing"},
+            func=weather,
+        )
+    )
+    registry.register(
+        Tool(
             name="now",
             description="Get the current local time.",
             parameters={},
@@ -143,10 +151,25 @@ def search_notes(query: str) -> str:
     return "\n".join(matches[:5])
 
 
+def weather(city: str) -> str:
+    forecasts = {
+        "beijing": "sunny, 26 C, light breeze",
+        "\u5317\u4eac": "sunny, 26 C, light breeze",
+        "shanghai": "cloudy, 25 C, humid",
+        "\u4e0a\u6d77": "cloudy, 25 C, humid",
+        "hangzhou": "light rain, 24 C, gentle wind",
+        "\u676d\u5dde": "light rain, 24 C, gentle wind",
+        "shenzhen": "partly cloudy, 29 C, warm",
+        "\u6df1\u5733": "partly cloudy, 29 C, warm",
+    }
+    city_name = city.strip() or "local"
+    forecast = forecasts.get(city_name.lower(), "partly cloudy, 24 C, light breeze")
+    return f"Mock weather for {city_name}: {forecast}. This is fake demo data."
+
+
 def now() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
 def _notes_path() -> Path:
     return Path.cwd() / "data" / "notes.jsonl"
-

@@ -1,6 +1,6 @@
 import unittest
 
-from mini_agent.tools import calculator
+from mini_agent.tools import calculator, weather
 
 
 class CalculatorTest(unittest.TestCase):
@@ -12,6 +12,12 @@ class CalculatorTest(unittest.TestCase):
             calculator("__import__('os').system('dir')")
 
 
+class WeatherTest(unittest.TestCase):
+    def test_known_city(self) -> None:
+        result = weather("Beijing")
+        self.assertIn("Mock weather for Beijing", result)
+        self.assertIn("sunny", result)
+
+
 if __name__ == "__main__":
     unittest.main()
-

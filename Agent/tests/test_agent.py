@@ -24,6 +24,16 @@ class MockLLMTest(unittest.TestCase):
         self.assertEqual(event["action"], "search_notes")
         self.assertEqual(event["action_input"], {"query": "288"})
 
+    def test_weather_intent_uses_weather_tool(self) -> None:
+        llm = MockLLM()
+        response = llm.complete(
+            [{"role": "user", "content": "\u5317\u4eac\u5929\u6c14\u600e\u4e48\u6837"}],
+            build_default_registry(),
+        )
+        event = parse_json_object(response)
+        self.assertEqual(event["action"], "weather")
+        self.assertEqual(event["action_input"], {"city": "\u5317\u4eac"})
+
 
 if __name__ == "__main__":
     unittest.main()
