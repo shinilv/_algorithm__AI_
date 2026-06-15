@@ -1,4 +1,6 @@
+import json
 import unittest
+from unittest.mock import patch
 
 from mini_agent.tools import calculator, list_files, read_file, search_files, weather
 
@@ -14,9 +16,40 @@ class CalculatorTest(unittest.TestCase):
 
 class WeatherTest(unittest.TestCase):
     def test_known_city(self) -> None:
-        result = weather("Beijing")
-        self.assertIn("Mock weather for Beijing", result)
-        self.assertIn("sunny", result)
+        payload = {
+            "current": {
+                "temperature_2m": 30.5,
+                "relative_humidity_2m": 49,
+                "wind_speed_10m": 4.8,
+                "weather_code": 3,
+            }
+        }
+        with (
+            patch(
+                "mini_agent.tools._geocode_city",
+                return_value={"name": "Beijing", "latitude": 39.9, "longitude": 116.4},
+            ),
+            patch("mini_agent.tools.urllib.request.urlopen", return_value=FakeResponse(payload)),
+        ):
+            result = weather("Beijing")
+
+        self.assertIn("Weather for Beijing", result)
+        self.assertIn("temperature 30.5 C", result)
+        self.assertIn("humidity 49%", result)
+
+
+class FakeResponse:
+    def __init__(self, payload: dict) -> None:
+        self.payload = payload
+
+    def __enter__(self) -> "FakeResponse":
+        return self
+
+    def __exit__(self, exc_type, exc, traceback) -> None:
+        return None
+
+    def read(self) -> bytes:
+        return json.dumps(self.payload).encode("utf-8")
 
 
 class FileToolsTest(unittest.TestCase):
