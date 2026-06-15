@@ -84,6 +84,14 @@ def build_default_registry() -> ToolRegistry:
             func=now,
         )
     )
+    registry.register(
+        Tool(
+            name="echo",
+            description="Return the input text. Useful for testing.",
+            parameters={"text": "Any text to echo back"},
+            func=lambda text: text,
+        )
+    )
     return registry
 
 
