@@ -6,6 +6,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
+import urllib.parse
+import urllib.request
 
 
 ToolFunction = Callable[..., str]
@@ -212,20 +214,52 @@ def search_notes(query: str) -> str:
 
 
 def weather(city: str) -> str:
-    forecasts = {
-        "beijing": "sunny, 26 C, light breeze",
-        "\u5317\u4eac": "sunny, 26 C, light breeze",
-        "shanghai": "cloudy, 25 C, humid",
-        "\u4e0a\u6d77": "cloudy, 25 C, humid",
-        "hangzhou": "light rain, 24 C, gentle wind",
-        "\u676d\u5dde": "light rain, 24 C, gentle wind",
-        "shenzhen": "partly cloudy, 29 C, warm",
-        "\u6df1\u5733": "partly cloudy, 29 C, warm",
-    }
-    city_name = city.strip() or "local"
-    forecast = forecasts.get(city_name.lower(), "partly cloudy, 24 C, light breeze")
-    return f"Mock weather for {city_name}: {forecast}. This is fake demo data."
+    city_name = city.strip()
+    if not city_name:
+        raise ValueError("city must not be empty")
 
+    location = _geocode_city(city_name)
+    latitude = location["latitude"]
+    longitude = location["longitude"]
+
+    params = urllib.parse.urlencode({
+        "latitude": latitude,
+        "longitude": longitude,
+        "current": "temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m",
+        "timezone": "auto",
+    })
+    url = f"https://api.open-meteo.com/v1/forecast?{params}"
+
+    with urllib.request.urlopen(url, timeout=10) as response:
+        data = json.loads(response.read().decode("utf-8"))
+
+    current = data["current"]
+    return (
+        f"Weather for {location['name']}: "
+        f"temperature {current['temperature_2m']} C, "
+        f"humidity {current['relative_humidity_2m']}%, "
+        f"wind speed {current['wind_speed_10m']} km/h, "
+        f"weather code {current['weather_code']}."
+    )
+
+
+def _geocode_city(city: str) -> dict[str, Any]:
+    params = urllib.parse.urlencode({
+        "name": city,
+        "count": 1,
+        "language": "zh",
+        "format": "json",
+    })
+    url = f"https://geocoding-api.open-meteo.com/v1/search?{params}"
+
+    with urllib.request.urlopen(url, timeout=10) as response:
+        data = json.loads(response.read().decode("utf-8"))
+
+    results = data.get("results", [])
+    if not results:
+        raise ValueError(f"Could not find city: {city}")
+
+    return results[0]
 
 def now() -> str:
     return datetime.now().isoformat(timespec="seconds")
