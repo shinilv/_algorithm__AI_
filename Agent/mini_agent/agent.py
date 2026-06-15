@@ -7,6 +7,9 @@ from typing import Any, Protocol
 from .prompts import SYSTEM_PROMPT
 from .tools import ToolRegistry
 
+from datetime import datetime
+from pathlib import Path
+
 
 class LLM(Protocol):
     def complete(self, messages: list[dict[str, str]], tools: ToolRegistry) -> str:
@@ -27,6 +30,11 @@ class Agent:
         self.debug = debug
 
     def run(self, task: str) -> AgentResult:
+        trace: dict[str, Any] = {
+            "task": task,
+            "created_at": datetime.now().isoformat(timespec="seconds"),
+            "steps": [],
+        }
         messages = [
             {"role": "system", "content": self._system_prompt()},
             {"role": "user", "content": task},
@@ -36,9 +44,20 @@ class Agent:
             raw = self.llm.complete(messages, self.tools)
             event = parse_json_object(raw)
             self._trace(step, event)
+            # 增加一步记录
+            step_record: dict[str, Any] = {
+                "step" : step,
+                "event" : event,
+            }
 
             if "final" in event:
-                return AgentResult(answer=str(event["final"]), steps=step)
+                # 完成时记录最终答案和状态
+                answer = str(event["final"])
+                trace["status"] = "completed"
+                trace["answer"] = answer
+                trace["steps"].append(step_record)
+                self._save_trace(trace)
+                return AgentResult(answer=answer, steps=step)
 
             action = str(event.get("action", ""))
             action_input = event.get("action_input", {})
@@ -50,16 +69,28 @@ class Agent:
             except Exception as exc:
                 observation = f"Tool error: {exc}"
 
+            step_record["observation"] = observation
+            trace["steps"].append(step_record)
+
             if self.debug:
                 print(f"[tool] {action} -> {observation}")
 
             messages.append({"role": "assistant", "content": json.dumps(event, ensure_ascii=False)})
             messages.append({"role": "tool", "content": observation})
 
+        answer=f"Reached max_steps={self.max_steps}. Try making the task smaller or improving the prompt.",
+        trace["status"] = "max_steps_reached"
+        trace["answer"] = answer
+        self._save_trace(trace)
         return AgentResult(
-            answer=f"Reached max_steps={self.max_steps}. Try making the task smaller or improving the prompt.",
+            answer=answer,
             steps=self.max_steps,
         )
+    def _save_trace(self, trace: dict[str, Any]) -> None:
+        path = Path.cwd() / "data" / "trace.jsonl"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(trace, ensure_ascii=False) + "\n")
 
     def _system_prompt(self) -> str:
         return f"{SYSTEM_PROMPT}\n\nAvailable tools:\n{self.tools.descriptions()}"
