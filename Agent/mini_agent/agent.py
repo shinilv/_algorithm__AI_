@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Protocol
 
 from .prompts import SYSTEM_PROMPT
 from .tools import ToolRegistry
-
-from datetime import datetime
-from pathlib import Path
 
 
 class LLM(Protocol):
@@ -46,8 +45,8 @@ class Agent:
             self._trace(step, event)
             # 增加一步记录
             step_record: dict[str, Any] = {
-                "step" : step,
-                "event" : event,
+                "step": step,
+                "event": event,
             }
 
             if "final" in event:
@@ -78,7 +77,7 @@ class Agent:
             messages.append({"role": "assistant", "content": json.dumps(event, ensure_ascii=False)})
             messages.append({"role": "tool", "content": observation})
 
-        answer=f"Reached max_steps={self.max_steps}. Try making the task smaller or improving the prompt.",
+        answer = f"Reached max_steps={self.max_steps}. Try making the task smaller or improving the prompt."
         trace["status"] = "max_steps_reached"
         trace["answer"] = answer
         self._save_trace(trace)
@@ -86,6 +85,7 @@ class Agent:
             answer=answer,
             steps=self.max_steps,
         )
+
     def _save_trace(self, trace: dict[str, Any]) -> None:
         path = Path.cwd() / "data" / "trace.jsonl"
         path.parent.mkdir(parents=True, exist_ok=True)

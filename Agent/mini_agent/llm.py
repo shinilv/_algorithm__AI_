@@ -19,6 +19,24 @@ class MockLLM:
         original_task = next(message["content"] for message in messages if message["role"] == "user")
 
         if last["role"] == "user":
+            if _is_file_list_task(original_task):
+                return _json(
+                    thought="I should list readable files in the workspace.",
+                    action="list_files",
+                    action_input={"directory": "."},
+                )
+            if _is_file_read_task(original_task):
+                return _json(
+                    thought="I should read the requested workspace file.",
+                    action="read_file",
+                    action_input={"path": _extract_file_path(original_task)},
+                )
+            if _is_file_search_task(original_task):
+                return _json(
+                    thought="I should search readable workspace files.",
+                    action="search_files",
+                    action_input={"query": _extract_file_query(original_task), "directory": "."},
+                )
             if "查找" in original_task or "搜索" in original_task or "search" in original_task.lower():
                 query = _extract_query(original_task)
                 return _json(
@@ -139,6 +157,60 @@ def _extract_query(text: str) -> str:
     if match:
         return match.group(1).strip()
     return text.strip()
+
+
+def _is_file_list_task(text: str) -> bool:
+    lowered = text.lower()
+    return ("list files" in lowered or "列出" in text or "有哪些文件" in text) and _mentions_workspace(text)
+
+
+def _is_file_read_task(text: str) -> bool:
+    lowered = text.lower()
+    has_read_intent = "read" in lowered or "读取" in text or "打开" in text
+    return has_read_intent and (_has_explicit_file_path(text) or "readme" in lowered or "文件" in text)
+
+
+def _is_file_search_task(text: str) -> bool:
+    lowered = text.lower()
+    has_search_intent = "search" in lowered or "查找" in text or "搜索" in text or "哪里定义" in text
+    return has_search_intent and _mentions_workspace(text)
+
+
+def _mentions_workspace(text: str) -> bool:
+    lowered = text.lower()
+    return any(
+        keyword in lowered
+        for keyword in ["file", "files", "project", "workspace", "code", ".py", ".md", ".txt", "readme"]
+    ) or any(keyword in text for keyword in ["文件", "项目", "代码", "仓库", "目录", "工程", "哪里定义"])
+
+
+def _extract_file_path(text: str) -> str:
+    match = re.search(r"([\w./\\-]+\.(?:csv|ini|json|jsonl|md|py|toml|txt|ya?ml))", text, flags=re.IGNORECASE)
+    if match:
+        return match.group(1).replace("\\", "/")
+    return "README.md"
+
+
+def _has_explicit_file_path(text: str) -> bool:
+    return re.search(r"[\w./\\-]+\.(?:csv|ini|json|jsonl|md|py|toml|txt|ya?ml)", text, flags=re.IGNORECASE) is not None
+
+
+def _extract_file_query(text: str) -> str:
+    quoted = re.findall(r"[\"'“”‘’](.+?)[\"'“”‘’]", text)
+    if quoted:
+        return quoted[0].strip()
+
+    for pattern in [
+        r"(class\s+\w+)",
+        r"(def\s+\w+)",
+        r"哪里定义了?\s*([A-Za-z_][\w_]*)",
+        r"(?:搜索|查找).*?(?:文件|项目|代码|仓库|工程).*?(?:里|中)?\s*([A-Za-z_][\w_]*)",
+    ]:
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if match:
+            return match.group(1).strip()
+
+    return _extract_query(text)
 
 
 def _is_weather_task(text: str) -> bool:

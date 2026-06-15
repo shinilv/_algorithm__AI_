@@ -9,6 +9,23 @@ from typing import Any, Callable
 
 
 ToolFunction = Callable[..., str]
+READABLE_TEXT_EXTENSIONS = {
+    ".csv",
+    ".ini",
+    ".json",
+    ".jsonl",
+    ".md",
+    ".py",
+    ".toml",
+    ".txt",
+    ".yaml",
+    ".yml",
+}
+BLOCKED_DIR_NAMES = {".git", ".venv", "__pycache__", "node_modules", "venv"}
+BLOCKED_FILE_NAMES = {".env", "notes.jsonl", "trace.jsonl", "traces.jsonl"}
+MAX_LIST_FILES = 80
+MAX_READ_CHARS = 6000
+MAX_SEARCH_MATCHES = 20
 
 
 @dataclass(frozen=True)
@@ -103,6 +120,30 @@ def build_default_registry() -> ToolRegistry:
             func=lambda text: text,
         )
     )
+    registry.register(
+        Tool(
+            name="list_files",
+            description="List readable text files under a workspace directory.",
+            parameters={"directory": "Workspace directory to list, for example: . or mini_agent"},
+            func=list_files,
+        )
+    )
+    registry.register(
+        Tool(
+            name="read_file",
+            description="Read a readable text file in the workspace. Long files are truncated.",
+            parameters={"path": "Workspace file path, for example: README.md or mini_agent/agent.py"},
+            func=read_file,
+        )
+    )
+    registry.register(
+        Tool(
+            name="search_files",
+            description="Search readable text files in a workspace directory by keyword.",
+            parameters={"query": "Keyword to search for", "directory": "Workspace directory to search, for example: ."},
+            func=search_files,
+        )
+    )
     return registry
 
 
@@ -190,5 +231,123 @@ def now() -> str:
     return datetime.now().isoformat(timespec="seconds")
 
 
+def list_files(directory: str) -> str:
+    target = _resolve_workspace_path(directory)
+    if not target.exists():
+        raise ValueError(f"Directory does not exist: {directory}")
+    if not target.is_dir():
+        raise ValueError(f"Path is not a directory: {directory}")
+
+    files: list[str] = []
+    for path in _iter_readable_files(target):
+        files.append(_relative_path(path))
+        if len(files) >= MAX_LIST_FILES:
+            files.append(f"... truncated after {MAX_LIST_FILES} files")
+            break
+
+    if not files:
+        return f"No readable text files found in {_relative_path(target)}."
+    return "\n".join(files)
+
+
+def read_file(path: str) -> str:
+    target = _resolve_workspace_path(path)
+    if not target.exists():
+        raise ValueError(f"File does not exist: {path}")
+    if not target.is_file():
+        raise ValueError(f"Path is not a file: {path}")
+    if not _is_readable_text_file(target):
+        raise ValueError(f"File type is not allowed: {_relative_path(target)}")
+
+    content = target.read_text(encoding="utf-8", errors="replace")
+    truncated = len(content) > MAX_READ_CHARS
+    if truncated:
+        content = content[:MAX_READ_CHARS]
+
+    header = f"File: {_relative_path(target)}"
+    if truncated:
+        return f"{header}\n\n{content}\n\n[truncated after {MAX_READ_CHARS} characters]"
+    return f"{header}\n\n{content}"
+
+
+def search_files(query: str, directory: str) -> str:
+    query_text = query.strip()
+    if not query_text:
+        raise ValueError("query must not be empty")
+
+    target = _resolve_workspace_path(directory)
+    if not target.exists():
+        raise ValueError(f"Directory does not exist: {directory}")
+    if not target.is_dir():
+        raise ValueError(f"Path is not a directory: {directory}")
+
+    matches: list[str] = []
+    query_lower = query_text.lower()
+    for path in _iter_readable_files(target):
+        with path.open("r", encoding="utf-8", errors="replace") as file:
+            for line_number, line in enumerate(file, start=1):
+                if query_lower in line.lower():
+                    preview = line.strip()
+                    matches.append(f"{_relative_path(path)}:{line_number}: {preview}")
+                    if len(matches) >= MAX_SEARCH_MATCHES:
+                        return "\n".join(matches)
+
+    if not matches:
+        return f"No matches for {query_text!r} in {_relative_path(target)}."
+    return "\n".join(matches)
+
+
 def _notes_path() -> Path:
     return Path.cwd() / "data" / "notes.jsonl"
+
+
+def _workspace_root() -> Path:
+    return Path.cwd().resolve()
+
+
+def _resolve_workspace_path(raw_path: str) -> Path:
+    if not raw_path.strip():
+        raise ValueError("path must not be empty")
+
+    root = _workspace_root()
+    candidate = Path(raw_path).expanduser()
+    if not candidate.is_absolute():
+        candidate = root / candidate
+    target = candidate.resolve()
+
+    if target != root and root not in target.parents:
+        raise ValueError(f"Path is outside workspace: {raw_path}")
+
+    relative_parts = target.relative_to(root).parts if target != root else ()
+    if any(part in BLOCKED_DIR_NAMES for part in relative_parts):
+        raise ValueError(f"Path is blocked: {raw_path}")
+    if target.name in BLOCKED_FILE_NAMES:
+        raise ValueError(f"File is blocked: {raw_path}")
+
+    return target
+
+
+def _iter_readable_files(directory: Path) -> list[Path]:
+    files: list[Path] = []
+    for path in sorted(directory.rglob("*")):
+        try:
+            relative_parts = path.relative_to(_workspace_root()).parts
+        except ValueError:
+            continue
+        if any(part in BLOCKED_DIR_NAMES for part in relative_parts):
+            continue
+        if path.is_file() and _is_readable_text_file(path):
+            files.append(path)
+    return files
+
+
+def _is_readable_text_file(path: Path) -> bool:
+    return path.name not in BLOCKED_FILE_NAMES and path.suffix.lower() in READABLE_TEXT_EXTENSIONS
+
+
+def _relative_path(path: Path) -> str:
+    root = _workspace_root()
+    try:
+        return path.resolve().relative_to(root).as_posix() or "."
+    except ValueError:
+        return str(path)
