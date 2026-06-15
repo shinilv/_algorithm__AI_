@@ -36,7 +36,18 @@ class ToolRegistry:
         if name not in self._tools:
             known = ", ".join(sorted(self._tools))
             raise ValueError(f"Unknown tool: {name}. Known tools: {known}")
-        return self._tools[name].func(**arguments)
+
+        tool = self._tools[name]
+        # 参数校验（简单版本）
+        missing = set(tool.parameters) - set(arguments)
+        if missing:
+            raise ValueError(f"Missing argument(s) for {name}: {', '.join(sorted(missing))}")
+
+        extra = set(arguments) - set(tool.parameters)
+        if extra:
+            raise ValueError(f"Unknown argument(s) for {name}: {', '.join(sorted(extra))}")
+
+        return tool.func(**arguments)
 
     def descriptions(self) -> str:
         return "\n".join(tool.schema_text() for tool in self._tools.values())
