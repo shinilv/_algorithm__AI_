@@ -3,7 +3,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from mini_agent.rag import build_chunks, build_vector_index, embed_chunks, write_chunks_jsonl, write_vector_index
+from mini_agent.rag import (
+    EmbeddedChunk,
+    build_chunks,
+    build_vector_index,
+    cosine_similarity,
+    embed_chunks,
+    load_vector_index,
+    semantic_search,
+    write_chunks_jsonl,
+    write_vector_index,
+)
 
 
 class BuildChunksTest(unittest.TestCase):
@@ -113,10 +123,68 @@ class BuildChunksTest(unittest.TestCase):
 
         self.assertIn("Wrote", message)
 
+    def test_load_vector_index(self) -> None:
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as temp_dir:
+            root = Path(temp_dir)
+            output_path = root / "vector_index.jsonl"
+            write_vector_index([_embedded("a", "doc.md", [1.0, 0.0])], str(output_path))
+
+            records = load_vector_index(str(output_path))
+
+        self.assertEqual(len(records), 1)
+        self.assertEqual(records[0].id, "a")
+        self.assertEqual(records[0].embedding, [1.0, 0.0])
+
+    def test_cosine_similarity(self) -> None:
+        self.assertAlmostEqual(cosine_similarity([1.0, 0.0], [1.0, 0.0]), 1.0)
+        self.assertAlmostEqual(cosine_similarity([1.0, 0.0], [0.0, 1.0]), 0.0)
+
+    def test_semantic_search_returns_most_similar_chunks(self) -> None:
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as temp_dir:
+            root = Path(temp_dir)
+            output_path = root / "vector_index.jsonl"
+            write_vector_index(
+                [
+                    _embedded("agent", "agent.md", [1.0, 0.0], text="Agent loop and tool calling."),
+                    _embedded("weather", "weather.md", [0.0, 1.0], text="Weather forecast API."),
+                ],
+                str(output_path),
+            )
+
+            result = semantic_search(
+                "agent tools",
+                top_k=1,
+                index_path=str(output_path),
+                embedding_client=FixedQueryEmbeddingClient([1.0, 0.0]),
+            )
+
+        self.assertIn("agent.md:1-1", result)
+        self.assertIn("Agent loop", result)
+        self.assertNotIn("weather.md", result)
+
 
 class FakeEmbeddingClient:
     def embed(self, texts: list[str]) -> list[list[float]]:
         return [[float(len(text)), 1.0, 0.5] for text in texts]
+
+
+class FixedQueryEmbeddingClient:
+    def __init__(self, embedding: list[float]) -> None:
+        self.embedding = embedding
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        return [self.embedding for _ in texts]
+
+
+def _embedded(chunk_id: str, path: str, embedding: list[float], text: str = "text") -> EmbeddedChunk:
+    return EmbeddedChunk(
+        id=chunk_id,
+        path=path,
+        start_line=1,
+        end_line=1,
+        text=text,
+        embedding=embedding,
+    )
 
 
 if __name__ == "__main__":

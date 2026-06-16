@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
+import sys
 import urllib.error
 import urllib.request
 from dataclasses import asdict, dataclass
@@ -54,6 +56,9 @@ DEFAULT_OVERLAP_LINES = 2
 
 # 调 embeddings API 时一次提交多少个 chunk。批量请求比逐条请求更快，也更省网络开销。
 DEFAULT_BATCH_SIZE = 16
+
+# 语义检索默认返回几个最相关片段。太少可能漏证据，太多会让模型上下文变吵。
+DEFAULT_TOP_K = 5
 
 
 @dataclass(frozen=True)
@@ -329,6 +334,123 @@ def build_vector_index(
     return write_vector_index(embedded, output_path=output_path)
 
 
+def semantic_search(
+    query: str,
+    top_k: int | str = DEFAULT_TOP_K,
+    index_path: str = "data/vector_index.jsonl",
+    embedding_client: EmbeddingClient | None = None,
+) -> str:
+    """基于向量索引做语义检索。
+
+    完整流程：
+        1. 把用户 query 转成 query embedding
+        2. 读取 data/vector_index.jsonl 里的 chunk embedding
+        3. 对 query 和每个 chunk 计算余弦相似度
+        4. 返回分数最高的 top_k 个片段
+
+    这就是当前项目里的最小版向量检索。
+    """
+
+    query_text = query.strip()
+    if not query_text:
+        raise ValueError("query must not be empty")
+
+    limit = _parse_top_k(top_k)
+    records = load_vector_index(index_path)
+    if not records:
+        return f"No vector index records found in {index_path}. Build the index first."
+
+    client = embedding_client or OpenAICompatibleEmbeddingClient.from_env()
+    query_embeddings = client.embed([query_text])
+    if len(query_embeddings) != 1:
+        raise RuntimeError(f"Expected 1 query embedding, got {len(query_embeddings)}")
+
+    query_embedding = query_embeddings[0]
+    scored: list[tuple[float, EmbeddedChunk]] = []
+    for record in records:
+        score = cosine_similarity(query_embedding, record.embedding)
+        scored.append((score, record))
+
+    scored.sort(key=lambda item: item[0], reverse=True)
+    return format_search_results(scored[:limit])
+
+
+def load_vector_index(index_path: str = "data/vector_index.jsonl") -> list[EmbeddedChunk]:
+    """读取向量索引 JSONL。
+
+    每一行都应该包含 path/start_line/end_line/text/embedding。
+    如果文件不存在，说明还没有执行 build_vector_index。
+    """
+
+    target = _resolve_workspace_path(index_path)
+    if not target.exists():
+        raise ValueError(f"Vector index does not exist: {index_path}. Build it with python -m mini_agent.rag ...")
+    if not target.is_file():
+        raise ValueError(f"Vector index path is not a file: {index_path}")
+
+    records: list[EmbeddedChunk] = []
+    with target.open("r", encoding="utf-8") as file:
+        for line_number, line in enumerate(file, start=1):
+            if not line.strip():
+                continue
+            raw = json.loads(line)
+            records.append(
+                EmbeddedChunk(
+                    id=str(raw["id"]),
+                    path=str(raw["path"]),
+                    start_line=int(raw["start_line"]),
+                    end_line=int(raw["end_line"]),
+                    text=str(raw["text"]),
+                    embedding=[float(value) for value in raw["embedding"]],
+                )
+            )
+
+    return records
+
+
+def cosine_similarity(left: list[float], right: list[float]) -> float:
+    """计算两个向量的余弦相似度。
+
+    返回值越接近 1，说明两个向量方向越接近，也就是语义越相似。
+    """
+
+    if len(left) != len(right):
+        raise ValueError(f"Vector dimension mismatch: {len(left)} != {len(right)}")
+    if not left:
+        raise ValueError("vectors must not be empty")
+
+    dot = sum(a * b for a, b in zip(left, right))
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
+    if left_norm == 0 or right_norm == 0:
+        return 0.0
+    return dot / (left_norm * right_norm)
+
+
+def format_search_results(results: list[tuple[float, EmbeddedChunk]]) -> str:
+    """把检索结果格式化成适合喂给模型的文本。
+
+    返回内容包含来源文件、行号、相似度分数和片段正文。
+    后续模型回答问题时，可以基于这些片段生成答案并附带引用。
+    """
+
+    if not results:
+        return "No semantic search results found."
+
+    blocks: list[str] = []
+    for rank, (score, record) in enumerate(results, start=1):
+        blocks.append(
+            "\n".join(
+                [
+                    f"[{rank}] {record.path}:{record.start_line}-{record.end_line} score={score:.4f}",
+                    record.text,
+                ]
+            )
+        )
+
+    return "\n\n---\n\n".join(blocks)
+
+
 def _chunk_file(path: Path, max_chars: int, overlap_lines: int) -> list[DocumentChunk]:
     """把单个文件按行切成多个 DocumentChunk。
 
@@ -375,6 +497,17 @@ def _chunk_file(path: Path, max_chars: int, overlap_lines: int) -> list[Document
         start_index = next_start
 
     return chunks
+
+
+def _parse_top_k(top_k: int | str) -> int:
+    try:
+        value = int(top_k)
+    except (TypeError, ValueError):
+        raise ValueError(f"top_k must be an integer, got {top_k!r}") from None
+
+    if value <= 0:
+        raise ValueError("top_k must be greater than 0")
+    return min(value, 20)
 
 
 def _workspace_root() -> Path:
@@ -464,22 +597,42 @@ def main() -> None:
         python -m mini_agent.rag mini_agent --output data/vector_index.jsonl
     """
 
-    parser = argparse.ArgumentParser(description="Build a local vector index for Mini Agent RAG.")
-    parser.add_argument("directory", help="Workspace directory to index, for example: mini_agent or docs")
-    parser.add_argument("--output", default="data/vector_index.jsonl", help="Output JSONL index path")
-    parser.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
-    parser.add_argument("--overlap-lines", type=int, default=DEFAULT_OVERLAP_LINES)
-    parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
+    # 兼容旧命令：python -m mini_agent.rag mini_agent ...
+    # 如果第一个参数不是 build/search，就默认插入 build 子命令。
+    if len(sys.argv) > 1 and sys.argv[1] not in {"build", "search", "-h", "--help"}:
+        sys.argv.insert(1, "build")
+
+    parser = argparse.ArgumentParser(description="Build and query a local vector index for Mini Agent RAG.")
+    subparsers = parser.add_subparsers(dest="command")
+
+    build_parser = subparsers.add_parser("build", help="Build a vector index")
+    build_parser.add_argument("directory", help="Workspace directory to index, for example: mini_agent or docs")
+    build_parser.add_argument("--output", default="data/vector_index.jsonl", help="Output JSONL index path")
+    build_parser.add_argument("--max-chars", type=int, default=DEFAULT_MAX_CHARS)
+    build_parser.add_argument("--overlap-lines", type=int, default=DEFAULT_OVERLAP_LINES)
+    build_parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
+
+    search_parser = subparsers.add_parser("search", help="Semantic search the vector index")
+    search_parser.add_argument("query", help="Search query")
+    search_parser.add_argument("--index", default="data/vector_index.jsonl", help="Vector index JSONL path")
+    search_parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
     args = parser.parse_args()
 
-    message = build_vector_index(
-        directory=args.directory,
-        output_path=args.output,
-        max_chars=args.max_chars,
-        overlap_lines=args.overlap_lines,
-        batch_size=args.batch_size,
-    )
-    print(message)
+    if args.command in (None, "build"):
+        if args.command is None:
+            parser.error("missing command. Use 'build' or 'search'.")
+        message = build_vector_index(
+            directory=args.directory,
+            output_path=args.output,
+            max_chars=args.max_chars,
+            overlap_lines=args.overlap_lines,
+            batch_size=args.batch_size,
+        )
+        print(message)
+        return
+
+    if args.command == "search":
+        print(semantic_search(args.query, top_k=args.top_k, index_path=args.index))
 
 
 if __name__ == "__main__":

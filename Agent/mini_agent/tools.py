@@ -146,6 +146,14 @@ def build_default_registry() -> ToolRegistry:
             func=search_files,
         )
     )
+    registry.register(
+        Tool(
+            name="semantic_search",
+            description="Search the local vector index by semantic similarity and return source chunks.",
+            parameters={"query": "Natural language search query", "top_k": "Number of chunks to return, for example: 5"},
+            func=semantic_search,
+        )
+    )
     return registry
 
 
@@ -329,6 +337,12 @@ def search_files(query: str, directory: str) -> str:
     if not matches:
         return f"No matches for {query_text!r} in {_relative_path(target)}."
     return "\n".join(matches)
+
+
+def semantic_search(query: str, top_k: int | str = 5) -> str:
+    from .rag import semantic_search as rag_semantic_search
+
+    return rag_semantic_search(query=query, top_k=top_k)
 
 
 def _notes_path() -> Path:
