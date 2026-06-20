@@ -107,7 +107,10 @@ DP
 [2026_6_1](https://github.com/shinilv/_algorithm_/tree/master/2026_6)：[atcoder:abc456_d](https://atcoder.jp/contests/abc456/tasks/abc456_d)
 
 经典结论 if max > sum - max: 不可构造
-[2026_6_8](https://github.com/shinilv/_algorithm_/tree/master/2026_8)：[atcoder:abc459_d](https://atcoder.jp/contests/abc459/tasks/abc459_d)
+[2026_6_8](https://github.com/shinilv/_algorithm_/tree/master/2026_6)：[atcoder:abc459_d](https://atcoder.jp/contests/abc459/tasks/abc459_d)
 
 math, 角度计算
-[2026_6_18](https://github.com/shinilv/_algorithm_/tree/master/2026_18)：[力扣1344：时钟指针的夹角](https://leetcode.cn/problems/angle-between-hands-of-a-clock/?envType=daily-question&envId=2026-06-18)
+[2026_6_18](https://github.com/shinilv/_algorithm_/tree/master/2026_6)：[力扣1344：时钟指针的夹角](https://leetcode.cn/problems/angle-between-hands-of-a-clock/?envType=daily-question&envId=2026-06-18)
+
+状数组+下标偏移+枚举右维护左
+[2026_6_20](https://github.com/shinilv/_algorithm_/tree/master/2026_6)：[力扣3379：统计主要元素子数组数目 II](https://leetcode.cn/problems/count-subarrays-with-majority-element-ii/description/)
