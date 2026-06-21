@@ -114,3 +114,7 @@ math, 角度计算
 
 状数组+下标偏移+枚举右维护左
 [2026_6_20](https://github.com/shinilv/_algorithm_/tree/master/2026_6)：[力扣3379：统计主要元素子数组数目 II](https://leetcode.cn/problems/count-subarrays-with-majority-element-ii/description/)
+
+
+排序 / 计数
+[2026_6_21](https://github.com/shinilv/_algorithm_/tree/master/2026_6)：[力扣3379：统计主要元素子数组数目 II](https://leetcode.cn/problems/maximum-ice-cream-bars/description/?envType=daily-question&envId=2026-06-21)
