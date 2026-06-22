@@ -1,0 +1,647 @@
+[1mdiff --git a/Agent/data/traces.jsonl b/2026_6/19.cpp[m
+[1msimilarity index 100%[m
+[1mrename from Agent/data/traces.jsonl[m
+[1mrename to 2026_6/19.cpp[m
+[1mdiff --git a/2026_6/20.cpp b/2026_6/20.cpp[m
+[1mdeleted file mode 100644[m
+[1mindex 8f3fb2c..0000000[m
+[1m--- a/2026_6/20.cpp[m
+[1m+++ /dev/null[m
+[36m@@ -1,56 +0,0 @@[m
+[31m-/*[m
+[31m-题意：[m
+[31m-https://leetcode.cn/problems/count-subarrays-with-majority-element-ii/description/[m
+[31m-给一个数组nums和一个整数target[m
+[31m-返回满足target是主要元素（出现次数大于长度的一半）的子数组数目[m
+[31m-[m
+[31m-思路：[m
+[31m-构造一个新数组， 如果nums[i] == targe s[i] = 1, 否则 s[i] = -1[m
+[31m-这样问题就转换成了，子数组和 > 0 的个数 ==> 计算s的前准和 就是[m
+[31m-求有多少 pre[j] - pre[i] > 0 其中 j > i[m
+[31m-也就是pre[j] > pre[i]，可以枚举j， 然后计算[0 - j - 1] 中满足条件的个数[m
+[31m-可以使用树状数组维护。初始的时候像树状数组中加入一个0，模仿 -1 位置[m
+[31m-*/[m
+[31m-[m
+[31m-[m
+[31m-class Solution {[m
+[31m-public:[m
+[31m-    long long countMajoritySubarrays(vector<int>& nums, int target) {[m
+[31m-        int n = nums.size();[m
+[31m-        int offset = n;  // 偏移量，将范围[-n, n]映射到[0, 2n][m
+[31m-        int size = 2 * n + 1;[m
+[31m-[m
+[31m-        vector<int> bit(size + 1, 0);[m
+[31m-[m
+[31m-        auto update = [&](int idx, int val) {[m
+[31m-            for (int i = idx; i <= size; i += i & -i) {[m
+[31m-                bit[i] += val;[m
+[31m-            }[m
+[31m-        };[m
+[31m-[m
+[31m-        auto query = [&](int idx) {[m
+[31m-            int sum = 0;[m
+[31m-            for (int i = idx; i > 0; i -= i & -i) {[m
+[31m-                sum += bit[i];[m
+[31m-            }[m
+[31m-            return sum;[m
+[31m-        };[m
+[31m-[m
+[31m-        long long ans = 0;[m
+[31m-        int pre = 0;[m
+[31m-[m
+[31m-        // 初始加入pre = 0（对应索引 offset + 0）[m
+[31m-        update(offset + 1, 1);  // 树状数组索引从1开始[m
+[31m-[m
+[31m-        for (int num : nums) {[m
+[31m-            pre += (num == target ? 1 : -1);[m
+[31m-            int idx = offset + pre + 1;  // 树状数组索引[m
+[31m-            // 查询严格小于当前pre的个数[m
+[31m-            ans += query(idx - 1);[m
+[31m-            // 将当前pre加入树状数组[m
+[31m-            update(idx, 1);[m
+[31m-        }[m
+[31m-[m
+[31m-        return ans;[m
+[31m-    }[m
+[31m-};[m
+[1mdiff --git a/2026_6/21.cpp b/2026_6/21.cpp[m
+[1mdeleted file mode 100644[m
+[1mindex f846e25..0000000[m
+[1m--- a/2026_6/21.cpp[m
+[1m+++ /dev/null[m
+[36m@@ -1,43 +0,0 @@[m
+[31m-/*[m
+[31m-题意：[m
+[31m-https://leetcode.cn/problems/maximum-ice-cream-bars/description/?envType=daily-question&envId=2026-06-21[m
+[31m-[m
+[31m-思路：[m
+[31m-从小到大依次选择[m
+[31m-两种做法[m
+[31m-*/[m
+[31m-[m
+[31m-O(nlongn)[m
+[31m-class Solution {[m
+[31m-public:[m
+[31m-    int maxIceCream(vector<int>& costs, int coins) {[m
+[31m-        sort(costs.begin(), costs.end());[m
+[31m-        int sum = 0, n = costs.size();[m
+[31m-        for (int i = 0; i < n; i++) {[m
+[31m-            sum += coins[i];[m
+[31m-            if (sum > coins) return i;[m
+[31m-        }[m
+[31m-        return n;[m
+[31m-    }[m
+[31m-};[m
+[31m-[m
+[31m-O(n + max(costs))[m
+[31m-class Solution {[m
+[31m-public:[m
+[31m-    int maxIceCream(vector<int>& costs, int coins) {[m
+[31m-        int mx = ranges::max(costs);[m
+[31m-        vector<int> cnt(mx + 1);[m
+[31m-        for (int cost : costs) {[m
+[31m-            cnt[cost]++;[m
+[31m-        }[m
+[31m-[m
+[31m-        // 按照价格从低到高买[m
+[31m-        int ans = 0;[m
+[31m-        for (int cost = 1; cost <= mx && cost <= coins; cost++) {[m
+[31m-            int num = min(cnt[cost], coins / cost);[m
+[31m-            coins -= cost * num; // 买 num 根雪糕[m
+[31m-            ans += num;[m
+[31m-        }[m
+[31m-        return ans;[m
+[31m-    }[m
+[31m-};[m
+[1mdiff --git a/2026_6/22.py b/2026_6/22.py[m
+[1mdeleted file mode 100644[m
+[1mindex 637c05a..0000000[m
+[1m--- a/2026_6/22.py[m
+[1m+++ /dev/null[m
+[36m@@ -1,29 +0,0 @@[m
+[31m-"""[m
+[31m-/*[m
+[31m-题意：[m
+[31m-https://atcoder.jp/contests/abc400/tasks/abc400_c[m
+[31m-[m
+[31m-输入 n(1≤n≤1e18)。[m
+[31m-如果正整数 x 可以表示为 pow(2, a) * b * b，其中 a 和 b 均为正整数，则称 x 为好整数。[m
+[31m-输出 [1, n] 中的好整数个数。[m
+[31m-[m
+[31m-思路：[m
+[31m-x 本质只有两类：2 * b^2 或者 4 * b^2，这两类无交集。[m
+[31m-对于 8 * b^2，等价于 2 * (2b)^2，其余类似。[m
+[31m-[m
+[31m-"""[m
+[31m-[m
+[31m-n = int(input())[m
+[31m-[m
+[31m-def func(v:int) -> int:[m
+[31m-    l, r = 0, n // v[m
+[31m-    while l < r:[m
+[31m-        m = l + r + 1 >> 1[m
+[31m-        if m * m * v <= n:[m
+[31m-            l = m[m
+[31m-        else:[m
+[31m-            r = m - 1[m
+[31m-    return l[m
+[31m-[m
+[31m-print(func(2) + func(4))[m
+[31m-[m
+[1mdiff --git a/Agent/.env b/Agent/.env[m
+[1mdeleted file mode 100644[m
+[1mindex 2ccfd74..0000000[m
+[1m--- a/Agent/.env[m
+[1m+++ /dev/null[m
+[36m@@ -1,3 +0,0 @@[m
+[31m-OPENAI_API_KEY=sk-fe851e24e59f4f6088a92c847045b860[m
+[31m-OPENAI_MODEL=qwen3.7-plus[m
+[31m-OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions[m
+[1mdiff --git a/Agent/.env.example b/Agent/.env.example[m
+[1mdeleted file mode 100644[m
+[1mindex 491cfbf..0000000[m
+[1m--- a/Agent/.env.example[m
+[1m+++ /dev/null[m
+[36m@@ -1,6 +0,0 @@[m
+[31m-# Copy this file to .env, then fill in your provider details.[m
+[31m-[m
+[31m-OPENAI_API_KEY=replace-with-your-api-key[m
+[31m-OPENAI_MODEL=replace-with-your-model-name[m
+[31m-OPENAI_BASE_URL=https://api.openai.com/v1/chat/completions[m
+[31m-[m
+[1mdiff --git a/Agent/.gitignore b/Agent/.gitignore[m
+[1mdeleted file mode 100644[m
+[1mindex cc6a48f..0000000[m
+[1m--- a/Agent/.gitignore[m
+[1m+++ /dev/null[m
+[36m@@ -1,6 +0,0 @@[m
+[31m-.env[m
+[31m-__pycache__/[m
+[31m-*.pyc[m
+[31m-.pytest_cache/[m
+[31m-data/[m
+[31m-[m
+[1mdiff --git a/Agent/README.md b/Agent/README.md[m
+[1mdeleted file mode 100644[m
+[1mindex 82f7c90..0000000[m
+[1m--- a/Agent/README.md[m
+[1m+++ /dev/null[m
+[36m@@ -1,554 +0,0 @@[m
+[31m-# Mini Learning Agent[m
+[31m-[m
+[31m-这是一个从“最小 agent loop”逐步扩展出来的本地资料问答 Agent 项目。它适合用来学习并展示：[m
+[31m-[m
+[31m-- Agent loop：模型决策、工具调用、observation 回传、最终回答[m
+[31m-- Tool calling：把普通 Python 函数注册成模型可调用工具[m
+[31m-- OpenAI-compatible API：接入真实大模型和 embeddings 模型[m
+[31m-- 本地文件问答：列文件、读文件、关键词搜索、语义搜索[m
+[31m-- RAG：文档分块、embedding、向量索引、余弦相似度召回[m
+[31m-- FastAPI + 前端页面：把命令行 Agent 做成可访问的 Web 应用[m
+[31m-[m
+[31m-这个项目最初是教学型 demo，现在已经具备一个“本地资料库问答 Agent”的雏形。[m
+[31m-[m
+[31m-## 当前能力[m
+[31m-[m
+[31m-项目现在支持三种使用方式：[m
+[31m-[m
+[31m-```text[m
+[31m-命令行使用[m
+[31m-  python -m mini_agent.main ...[m
+[31m-[m
+[31m-Web API 使用[m
+[31m-  POST /chat[m
+[31m-[m
+[31m-网页使用[m
+[31m-  http://127.0.0.1:8000/[m
+[31m-```[m
+[31m-[m
+[31m-核心能力包括：[m
+[31m-[m
+[31m-- `calculator`：安全计算简单数学表达式[m
+[31m-- `save_note` / `search_notes`：保存和搜索学习笔记[m
+[31m-- `weather`：调用真实天气 API 查询天气[m
+[31m-- `list_files`：列出本地可读文本文件[m
+[31m-- `read_file`：读取指定本地文本文件[m
+[31m-- `search_files`：关键词搜索本地文件[m
+[31m-- `semantic_search`：基于 embedding 和余弦相似度做语义检索[m
+[31m-- `trace`：记录每次 Agent 执行过程，方便复盘和调试[m
+[31m-[m
+[31m-## 项目结构[m
+[31m-[m
+[31m-```text[m
+[31m-mini_agent/[m
+[31m-  agent.py       Agent loop、JSON 解析、trace 记录[m
+[31m-  api.py         FastAPI 后端接口和网页静态资源挂载[m
+[31m-  llm.py         MockLLM、OpenAI-compatible chat completions 客户端[m
+[31m-  main.py        命令行入口[m
+[31m-  prompts.py     系统提示词，约束模型输出 JSON action/final[m
+[31m-  rag.py         RAG：分块、embedding、向量索引、语义检索[m
+[31m-  tools.py       工具注册表和所有可调用工具[m
+[31m-[m
+[31m-web/[m
+[31m-  index.html     前端页面[m
+[31m-  style.css      页面样式[m
+[31m-  app.js         调用 /chat 的前端逻辑[m
+[31m-[m
+[31m-tests/[m
+[31m-  test_agent.py[m
+[31m-  test_tools.py[m
+[31m-  test_rag.py[m
+[31m-[m
+[31m-data/[m
+[31m-  notes.jsonl          学习笔记[m
+[31m-  trace.jsonl          Agent 执行轨迹[m
+[31m-  vector_index.jsonl   RAG 向量索引[m
+[31m-```[m
+[31m-[m
+[31m-## 安装依赖[m
+[31m-[m
+[31m-建议使用 Python 3.10+。[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m pip install -r requirements.txt[m
+[31m-```[m
+[31m-[m
+[31m-如果 Windows 上 `python` 不可用，可以试：[m
+[31m-[m
+[31m-```powershell[m
+[31m-py -m pip install -r requirements.txt[m
+[31m-```[m
+[31m-[m
+[31m-当前依赖：[m
+[31m-[m
+[31m-```text[m
+[31m-fastapi[m
+[31m-uvicorn[m
+[31m-```[m
+[31m-[m
+[31m-其他核心功能主要使用 Python 标准库。[m
+[31m-[m
+[31m-## 环境变量[m
+[31m-[m
+[31m-复制 `.env.example` 为 `.env`，然后配置真实模型 API。[m
+[31m-[m
+[31m-示例：[m
+[31m-[m
+[31m-```env[m
+[31m-OPENAI_API_KEY=你的API_KEY[m
+[31m-OPENAI_MODEL=qwen-plus[m
+[31m-OPENAI_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions[m
+[31m-[m
+[31m-EMBEDDING_MODEL=text-embedding-v1[m
+[31m-EMBEDDING_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1/embeddings[m
+[31m-```[m
+[31m-[m
+[31m-说明：[m
+[31m-[m
+[31m-- `OPENAI_*` 用于聊天模型，也就是让模型决定下一步 action。[m
+[31m-- `EMBEDDING_*` 用于 RAG 语义检索，把文本转成向量。[m
+[31m-- 如果没有配置 `EMBEDDING_API_KEY`，项目会复用 `OPENAI_API_KEY`。[m
+[31m-[m
+[31m-不要把真实 `.env` 提交到 GitHub。[m
+[31m-[m
+[31m-## 快速运行[m
+[31m-[m
+[31m-### 1. 命令行 mock 模式[m
+[31m-[m
+[31m-mock 模式不需要 API Key，适合先理解 agent loop。[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.main --debug "帮我算一下 24 * (7 + 5)，然后把结果保存成笔记"[m
+[31m-```[m
+[31m-[m
+[31m-你会看到类似流程：[m
+[31m-[m
+[31m-```text[m
+[31m-[step 1] action: calculator[m
+[31m-[tool] calculator -> 288[m
+[31m-[m
+[31m-[step 2] action: save_note[m
+[31m-[tool] save_note -> Saved note: Agent learning note[m
+[31m-[m
+[31m-[step 3] final: 完成：Saved note: Agent learning note[m
+[31m-```[m
+[31m-[m
+[31m-### 2. 命令行真实模型模式[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.main --backend openai --debug "搜索项目里哪里定义了 ToolRegistry"[m
+[31m-```[m
+[31m-[m
+[31m-真实模式下，模型会根据 system prompt 里列出的工具说明，返回类似：[m
+[31m-[m
+[31m-```json[m
+[31m-{[m
+[31m-  "thought": "I should search the local files.",[m
+[31m-  "action": "search_files",[m
+[31m-  "action_input": {[m
+[31m-    "query": "ToolRegistry",[m
+[31m-    "directory": "."[m
+[31m-  }[m
+[31m-}[m
+[31m-```[m
+[31m-[m
+[31m-Python 程序再根据这个 JSON 真正执行工具。[m
+[31m-[m
+[31m-### 3. 启动 FastAPI 和网页[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m uvicorn mini_agent.api:app --reload --host 127.0.0.1 --port 8000[m
+[31m-```[m
+[31m-[m
+[31m-浏览器打开：[m
+[31m-[m
+[31m-```text[m
+[31m-http://127.0.0.1:8000/[m
+[31m-```[m
+[31m-[m
+[31m-接口文档：[m
+[31m-[m
+[31m-```text[m
+[31m-http://127.0.0.1:8000/docs[m
+[31m-```[m
+[31m-[m
+[31m-健康检查：[m
+[31m-[m
+[31m-```text[m
+[31m-http://127.0.0.1:8000/health[m
+[31m-```[m
+[31m-[m
+[31m-如果端口冲突，可以换端口：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m uvicorn mini_agent.api:app --reload --host 127.0.0.1 --port 8010[m
+[31m-```[m
+[31m-[m
+[31m-如果要让同一局域网其他设备访问：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m uvicorn mini_agent.api:app --reload --host 0.0.0.0 --port 8010[m
+[31m-```[m
+[31m-[m
+[31m-然后用本机 WLAN IPv4 访问，例如：[m
+[31m-[m
+[31m-```text[m
+[31m-http://你的局域网IP:8010/[m
+[31m-```[m
+[31m-[m
+[31m-注意：当前项目没有登录鉴权，不建议暴露到公网。[m
+[31m-[m
+[31m-## Agent Loop 是怎么工作的[m
+[31m-[m
+[31m-核心循环在 `mini_agent/agent.py` 的 `Agent.run()`。[m
+[31m-[m
+[31m-```text[m
+[31m-用户任务[m
+[31m-  ↓[m
+[31m-组装 messages：system prompt + user task + 历史步骤[m
+[31m-  ↓[m
+[31m-调用 LLM complete(messages, tools)[m
+[31m-  ↓[m
+[31m-解析模型返回的 JSON[m
+[31m-  ↓[m
+[31m-如果有 action：调用工具[m
+[31m-  ↓[m
+[31m-把工具结果 observation 加回 messages[m
+[31m-  ↓[m
+[31m-继续下一轮[m
+[31m-  ↓[m
+[31m-如果有 final：返回最终答案[m
+[31m-```[m
+[31m-[m
+[31m-`run()` 外部只调用一次，但内部通过：[m
+[31m-[m
+[31m-```python[m
+[31m-for step in range(1, self.max_steps + 1):[m
+[31m-```[m
+[31m-[m
+[31m-完成多轮工具调用。`max_steps` 是安全边界，用来避免模型无限循环。[m
+[31m-[m
+[31m-## 工具调用是怎么实现的[m
+[31m-[m
+[31m-工具注册在 `mini_agent/tools.py`。[m
+[31m-[m
+[31m-每个工具由四部分组成：[m
+[31m-[m
+[31m-```python[m
+[31m-Tool([m
+[31m-    name="search_files",[m
+[31m-    description="Search readable text files in a workspace directory by keyword.",[m
+[31m-    parameters={[m
+[31m-        "query": "Keyword to search for",[m
+[31m-        "directory": "Workspace directory to search, for example: .",[m
+[31m-    },[m
+[31m-    func=search_files,[m
+[31m-)[m
+[31m-```[m
+[31m-[m
+[31m-真实 API 并不会读取 Python 函数源码。项目会把工具说明转成文本，拼进 system prompt：[m
+[31m-[m
+[31m-```text[m
+[31m-Available tools:[m
+[31m-- search_files(query: ..., directory: ...) -> Search readable text files...[m
+[31m-- semantic_search(query: ..., top_k: ...) -> Search the local vector index...[m
+[31m-```[m
+[31m-[m
+[31m-模型根据这些工具说明输出 JSON。程序再解析 JSON 并执行对应 Python 函数。[m
+[31m-[m
+[31m-## 本地文件问答[m
+[31m-[m
+[31m-当前有两类本地检索：[m
+[31m-[m
+[31m-```text[m
+[31m-关键词检索：search_files[m
+[31m-语义检索：semantic_search[m
+[31m-```[m
+[31m-[m
+[31m-关键词检索适合明确知道关键词时使用：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.main --backend openai --debug "搜索项目里哪里定义了 ToolRegistry"[m
+[31m-```[m
+[31m-[m
+[31m-语义检索适合自然语言问题：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.main --backend openai --debug "工具注册表是怎么工作的？"[m
+[31m-```[m
+[31m-[m
+[31m-只要模型选择了 `semantic_search`，Agent 就会从 `data/vector_index.jsonl` 里召回最相关的 chunk。[m
+[31m-[m
+[31m-## RAG 使用流程[m
+[31m-[m
+[31m-RAG 的核心文件是 `mini_agent/rag.py`。[m
+[31m-[m
+[31m-当前完整链路：[m
+[31m-[m
+[31m-```text[m
+[31m-本地资料[m
+[31m-  ↓[m
+[31m-build_chunks：按行切成 chunks[m
+[31m-  ↓[m
+[31m-embedding API：每个 chunk 转成向量[m
+[31m-  ↓[m
+[31m-data/vector_index.jsonl：保存向量索引[m
+[31m-  ↓[m
+[31m-semantic_search：用户问题转向量，计算余弦相似度[m
+[31m-  ↓[m
+[31m-返回 top_k 相关片段[m
+[31m-  ↓[m
+[31m-模型基于片段生成回答[m
+[31m-```[m
+[31m-[m
+[31m-### 1. 构建向量索引[m
+[31m-[m
+[31m-索引 `mini_agent` 目录：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.rag build mini_agent --output data/vector_index.jsonl[m
+[31m-```[m
+[31m-[m
+[31m-旧命令也兼容：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.rag mini_agent --output data/vector_index.jsonl[m
+[31m-```[m
+[31m-[m
+[31m-常用参数：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.rag build mini_agent `[m
+[31m-  --output data/vector_index.jsonl `[m
+[31m-  --max-chars 1200 `[m
+[31m-  --overlap-lines 2 `[m
+[31m-  --batch-size 8[m
+[31m-```[m
+[31m-[m
+[31m-参数含义：[m
+[31m-[m
+[31m-- `--max-chars`：每个 chunk 最大字符数[m
+[31m-- `--overlap-lines`：相邻 chunk 重叠行数[m
+[31m-- `--batch-size`：每次 embeddings API 请求包含多少个 chunk[m
+[31m-[m
+[31m-### 2. 执行语义检索[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.rag search "ToolRegistry 是怎么工作的" --top-k 3[m
+[31m-```[m
+[31m-[m
+[31m-返回示例：[m
+[31m-[m
+[31m-```text[m
+[31m-[1] mini_agent/tools.py:50-80 score=0.5232[m
+[31m-if tool.name in self._tools:[m
+[31m-    ...[m
+[31m-[m
+[31m----[m
+[31m-[m
+[31m-[2] mini_agent/tools.py:79-115 score=0.5550[m
+[31m-registry.register(...)[m
+[31m-```[m
+[31m-[m
+[31m-结果里包含：[m
+[31m-[m
+[31m-- 来源文件[m
+[31m-- 起止行号[m
+[31m-- 相似度分数[m
+[31m-- chunk 原文[m
+[31m-[m
+[31m-### 3. 新增资料后怎么办[m
+[31m-[m
+[31m-如果你新增、删除、修改了本地资料，需要重新构建索引。[m
+[31m-[m
+[31m-例如你新增了：[m
+[31m-[m
+[31m-```text[m
+[31m-docs/agent_notes.md[m
+[31m-docs/rag_intro.md[m
+[31m-```[m
+[31m-[m
+[31m-就重新执行：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m mini_agent.rag build docs --output data/vector_index.jsonl[m
+[31m-```[m
+[31m-[m
+[31m-因为 `data/vector_index.jsonl` 是某一时刻资料的“向量快照”，不会自动感知新文件。[m
+[31m-[m
+[31m-后续可以升级成增量索引：记录文件 hash 或修改时间，只重建变化过的文件。当前阶段先全量重建，最简单稳定。[m
+[31m-[m
+[31m-## 文件安全边界[m
+[31m-[m
+[31m-项目不会索引或读取这些目录：[m
+[31m-[m
+[31m-```text[m
+[31m-.git[m
+[31m-.venv[m
+[31m-__pycache__[m
+[31m-node_modules[m
+[31m-venv[m
+[31m-```[m
+[31m-[m
+[31m-不会读取 `.env`。[m
+[31m-[m
+[31m-RAG 构建时也会跳过运行数据：[m
+[31m-[m
+[31m-```text[m
+[31m-notes.jsonl[m
+[31m-trace.jsonl[m
+[31m-traces.jsonl[m
+[31m-chunks.jsonl[m
+[31m-vector_index.jsonl[m
+[31m-```[m
+[31m-[m
+[31m-这是为了避免：[m
+[31m-[m
+[31m-- API Key 泄露[m
+[31m-- 检索到运行日志[m
+[31m-- 新索引把旧索引也索引进去[m
+[31m-[m
+[31m-## API 使用[m
+[31m-[m
+[31m-`POST /chat`[m
+[31m-[m
+[31m-请求体：[m
+[31m-[m
+[31m-```json[m
+[31m-{[m
+[31m-  "task": "搜索项目里哪里定义了 ToolRegistry",[m
+[31m-  "backend": "openai",[m
+[31m-  "max_steps": 8,[m
+[31m-  "debug": false[m
+[31m-}[m
+[31m-```[m
+[31m-[m
+[31m-返回：[m
+[31m-[m
+[31m-```json[m
+[31m-{[m
+[31m-  "answer": "...",[m
+[31m-  "steps": 3[m
+[31m-}[m
+[31m-```[m
+[31m-[m
+[31m-PowerShell 示例：[m
+[31m-[m
+[31m-```powershell[m
+[31m-Invoke-RestMethod `[m
+[31m-  -Method Post `[m
+[31m-  -Uri "http://127.0.0.1:8000/chat" `[m
+[31m-  -ContentType "application/json; charset=utf-8" `[m
+[31m-  -Body '{"task":"搜索项目里哪里定义了 ToolRegistry","backend":"openai","max_steps":8}'[m
+[31m-```[m
+[31m-[m
+[31m-## 测试[m
+[31m-[m
+[31m-运行所有测试：[m
+[31m-[m
+[31m-```powershell[m
+[31m-python -m unittest discover -s tests[m
+[31m-```[m
+[31m-[m
+[31m-当前测试覆盖：[m
+[31m-[m
+[31m-- JSON 解析[m
+[31m-- mock LLM 的基础意图判断[m
+[31m-- calculator 安全限制[m
+[31m-- 天气工具的离线 mock 测
