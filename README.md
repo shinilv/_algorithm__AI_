@@ -118,3 +118,6 @@ math, 角度计算
 
 排序 / 计数
 [2026_6_21](https://github.com/shinilv/_algorithm_/tree/master/2026_6)：[力扣3379：统计主要元素子数组数目 II](https://leetcode.cn/problems/maximum-ice-cream-bars/description/?envType=daily-question&envId=2026-06-21)
+
+数学
+[2026_6_22](https://atcoder.jp/contests/abc400/tasks/abc400_c)：[abc400_c: 2^a b^2](https://leetcode.cn/problems/maximum-ice-cream-bars/description/?envType=daily-question&envId=2026-06-22)
