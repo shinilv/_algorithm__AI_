@@ -27,6 +27,7 @@ public:
         return l->val == r->val && check(l->left, r->right) && check(l->right, r->left);
     }
     bool isSymmetric(TreeNode* root) {
-        return check(root, root);
+        if (root == nullptr) return true;
+        return check(root->left, root->right);
     }
 };
