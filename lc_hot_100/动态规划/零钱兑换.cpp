@@ -5,6 +5,44 @@
 
 思路：
 */
+
+class Solution {
+public:
+    int coinChange(vector<int>& coins, int amount) {
+        int n = coins.size();
+        vector<vector<int>> dp(n + 1, vector<int>(amount + 1, amount + 1));
+        for (int i = 0; i <= n; i++) dp[i][0] = 0;
+        // for (int i = 0; i < n; i++) {
+        //     for (int j = 0; j <= amount; j++) {
+        //         dp[i + 1][j] = dp[i][j]; // 不选第 i 个硬币
+        //         for (int k = 1; k * coins[i] <= j; k++) {
+        //             dp[i + 1][j] = min(dp[i + 1][j], dp[i][j - k * coins[i]] + k);
+        //         }
+        //     }
+        // }
+
+/*
+这是最暴力的写法，我们可以发现
+暴力枚举 dp[i + 1][j] = min(dp[i][j], dp[i][j - c] + 1, dp[i][j - 2c] + 2, ...)
+dp[i + 1][j - c]  中已经包含了 dp[i][j - c], dp[i][j - 2c] + 1, dp[i][j - 3c] + 2 ...
+*/
+        for (int i = 0; i < n; i++) {
+            int c = coins[i];
+            for (int j = 0; j <= amount; j++) {
+                dp[i + 1][j] = dp[i][j];
+                if (j >= c) {
+                    dp[i + 1][j] = min(dp[i + 1][j], dp[i + 1][j - c] + 1);
+                }
+            }
+        }
+
+        if (dp[n][amount] > amount) return -1;
+        return dp[n][amount];
+    }
+};
+
+
+// 滚动数组优化
 class Solution {
 public:
     int coinChange(vector<int>& coins, int amount) {
