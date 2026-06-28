@@ -115,3 +115,7 @@ math, 角度计算
 
 数学
 [2026_6_22](https://atcoder.jp/contests/abc400/tasks/abc400_c)：[abc400_c: 2^a b^2](https://leetcode.cn/problems/maximum-ice-cream-bars/description/?envType=daily-question&envId=2026-06-22)
+
+
+二分 + 数学
+[2026_6_27](https://leetcode.cn/problems/maximum-total-value/description/)：[力扣3971：最大总价值](https://leetcode.cn/problems/maximum-ice-cream-bars/description/?envType=daily-question&envId=2026-06-27)

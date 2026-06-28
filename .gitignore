@@ -1,2 +1,8 @@
+<<<<<<< HEAD
 AI/A/requirements.txt
 AI/A/.env
+=======
+/Qt_work/
+.vs/ProjectSettings.json
+.vs/slnx.sqlite
+>>>>>>> f9e4f2a1cd5573b1cfa199997bfecf89793f8d2b
